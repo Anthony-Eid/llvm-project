@@ -6,6 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef PROGRESS_EVENT_H
+#define PROGRESS_EVENT_H
+
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -155,3 +158,5 @@ private:
 };
 
 } // namespace lldb_dap
+
+#endif // PROGRESS_EVENT_H

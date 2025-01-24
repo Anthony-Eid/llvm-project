@@ -13,6 +13,7 @@
 #include <iosfwd>
 #include <map>
 #include <optional>
+#include <set>
 #include <thread>
 
 #include "llvm/ADT/DenseMap.h"
@@ -39,6 +40,7 @@
 #include "InstructionBreakpoint.h"
 #include "ProgressEvent.h"
 #include "SourceBreakpoint.h"
+#include "lldb/API/SBValueList.h"
 
 #define VARREF_LOCALS (int64_t)1
 #define VARREF_GLOBALS (int64_t)2
@@ -86,6 +88,8 @@ struct Variables {
   int64_t next_temporary_var_ref{VARREF_FIRST_VAR_IDX};
   int64_t next_permanent_var_ref{PermanentVariableStartIndex};
 
+  std::set<uint32_t> added_frames;
+
   /// Variables that are alive in this stop state.
   /// Will be cleared when debuggee resumes.
   llvm::DenseMap<int64_t, lldb::SBValue> referenced_variables;
@@ -117,24 +121,26 @@ struct Variables {
 
 struct StartDebuggingRequestHandler : public lldb::SBCommandPluginInterface {
   DAP &dap;
-  explicit StartDebuggingRequestHandler(DAP &d) : dap(d) {};
+  explicit StartDebuggingRequestHandler(DAP &d) : dap(d){};
   bool DoExecute(lldb::SBDebugger debugger, char **command,
                  lldb::SBCommandReturnObject &result) override;
 };
 
 struct ReplModeRequestHandler : public lldb::SBCommandPluginInterface {
   DAP &dap;
-  explicit ReplModeRequestHandler(DAP &d) : dap(d) {};
+  explicit ReplModeRequestHandler(DAP &d) : dap(d){};
   bool DoExecute(lldb::SBDebugger debugger, char **command,
                  lldb::SBCommandReturnObject &result) override;
 };
 
 struct SendEventRequestHandler : public lldb::SBCommandPluginInterface {
   DAP &dap;
-  explicit SendEventRequestHandler(DAP &d) : dap(d) {};
+  explicit SendEventRequestHandler(DAP &d) : dap(d){};
   bool DoExecute(lldb::SBDebugger debugger, char **command,
                  lldb::SBCommandReturnObject &result) override;
 };
+
+enum ScopeKind { Locals, Globals, Registers };
 
 struct DAP {
   llvm::StringRef debug_adaptor_path;
@@ -159,6 +165,7 @@ struct DAP {
   std::vector<std::string> exit_commands;
   std::vector<std::string> stop_commands;
   std::vector<std::string> terminate_commands;
+  std::map<int, ScopeKind> scope_kinds;
   // Map step in target id to list of function targets that user can choose.
   llvm::DenseMap<lldb::addr_t, std::string> step_in_targets;
   // A copy of the last LaunchRequest or AttachRequest so we can reuse its
@@ -230,6 +237,8 @@ struct DAP {
   llvm::json::Value CreateTopLevelScopes();
 
   void PopulateExceptionBreakpoints();
+
+  std::optional<ScopeKind> ScopeKind(const int64_t variablesReference);
 
   /// Attempt to determine if an expression is a variable expression or
   /// lldb command using a heuristic based on the first term of the

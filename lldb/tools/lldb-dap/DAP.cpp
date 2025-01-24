@@ -8,6 +8,7 @@
 
 #include <chrono>
 #include <cstdarg>
+#include <cstdint>
 #include <fstream>
 #include <mutex>
 
@@ -135,6 +136,15 @@ void DAP::PopulateExceptionBreakpoints() {
     }
     assert(!exception_breakpoints->empty() && "should not be empty");
   });
+}
+
+std::optional<ScopeKind> DAP::ScopeKind(const int64_t variablesReference) {
+  auto iter = scope_kinds.find(variablesReference);
+  if (iter != scope_kinds.end()) {
+    return iter->second;
+  }
+
+  return std::nullopt;
 }
 
 ExceptionBreakpoint *DAP::GetExceptionBreakpoint(const std::string &filter) {
@@ -476,12 +486,22 @@ lldb::SBFrame DAP::GetLLDBFrame(const llvm::json::Object &arguments) {
 
 llvm::json::Value DAP::CreateTopLevelScopes() {
   llvm::json::Array scopes;
-  scopes.emplace_back(
-      CreateScope("Locals", VARREF_LOCALS, variables.locals.GetSize(), false));
-  scopes.emplace_back(CreateScope("Globals", VARREF_GLOBALS,
+
+  scopes.emplace_back(CreateScope("Locals", variables.next_temporary_var_ref,
+                                  ScopeKind::Locals, variables.locals.GetSize(),
+                                  false));
+  scope_kinds[variables.next_temporary_var_ref++] = ScopeKind::Locals;
+
+  scopes.emplace_back(CreateScope("Globals", variables.next_temporary_var_ref,
+                                  ScopeKind::Globals,
                                   variables.globals.GetSize(), false));
-  scopes.emplace_back(CreateScope("Registers", VARREF_REGS,
+  scope_kinds[variables.next_temporary_var_ref++] = ScopeKind::Globals;
+
+  scopes.emplace_back(CreateScope("Registers", variables.next_temporary_var_ref,
+                                  ScopeKind::Registers,
                                   variables.registers.GetSize(), false));
+  scope_kinds[variables.next_temporary_var_ref++] = ScopeKind::Registers;
+
   return llvm::json::Value(std::move(scopes));
 }
 
