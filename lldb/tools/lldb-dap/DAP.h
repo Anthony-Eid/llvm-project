@@ -15,6 +15,8 @@
 #include <optional>
 #include <set>
 #include <thread>
+#include <tuple>
+#include <utility>
 
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
@@ -88,7 +90,9 @@ struct Variables {
   int64_t next_temporary_var_ref{VARREF_FIRST_VAR_IDX};
   int64_t next_permanent_var_ref{PermanentVariableStartIndex};
 
-  std::set<uint32_t> added_frames;
+  std::map<uint32_t,
+           std::tuple<lldb::SBValueList, lldb::SBValueList, lldb::SBValueList>>
+      frames;
 
   /// Variables that are alive in this stop state.
   /// Will be cleared when debuggee resumes.
@@ -114,6 +118,8 @@ struct Variables {
   /// Insert a new \p variable.
   /// \return variableReference assigned to this expandable variable.
   int64_t InsertVariable(lldb::SBValue variable, bool is_permanent);
+
+  bool SwitchFrame(uint32_t frame_id);
 
   /// Clear all scope variables and non-permanent expandable variables.
   void Clear();
@@ -165,7 +171,7 @@ struct DAP {
   std::vector<std::string> exit_commands;
   std::vector<std::string> stop_commands;
   std::vector<std::string> terminate_commands;
-  std::map<int, ScopeKind> scope_kinds;
+  std::map<int, std::pair<ScopeKind, uint32_t>> scope_kinds;
   // Map step in target id to list of function targets that user can choose.
   llvm::DenseMap<lldb::addr_t, std::string> step_in_targets;
   // A copy of the last LaunchRequest or AttachRequest so we can reuse its
@@ -234,7 +240,7 @@ struct DAP {
 
   lldb::SBFrame GetLLDBFrame(const llvm::json::Object &arguments);
 
-  llvm::json::Value CreateTopLevelScopes();
+  llvm::json::Value CreateTopLevelScopes(uint32_t frame_id);
 
   void PopulateExceptionBreakpoints();
 

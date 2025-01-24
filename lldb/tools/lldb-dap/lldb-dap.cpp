@@ -51,6 +51,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #if defined(_WIN32)
@@ -128,17 +129,25 @@ static void PrintWelcomeMessage(DAP &dap) {
 }
 
 lldb::SBValueList *GetTopLevelScope(DAP &dap, int64_t variablesReference) {
-  std::optional<ScopeKind> scope_kind = dap.ScopeKind(variablesReference);
+  auto iter = dap.scope_kinds.find(variablesReference);
+  if (iter == dap.scope_kinds.end()) {
+    return nullptr;
+  }
 
-  if (scope_kind.has_value()) {
-    switch (scope_kind.value()) {
-    case lldb_dap::ScopeKind::Locals:
-      return &dap.variables.locals;
-    case lldb_dap::ScopeKind::Globals:
-      return &dap.variables.globals;
-    case lldb_dap::ScopeKind::Registers:
-      return &dap.variables.registers;
-    }
+  ScopeKind scope_kind = iter->second.first;
+  uint32_t frame_id = iter->second.second;
+
+  if (!dap.variables.SwitchFrame(frame_id)) {
+    return nullptr;
+  }
+
+  switch (scope_kind) {
+  case lldb_dap::ScopeKind::Locals:
+    return &dap.variables.locals;
+  case lldb_dap::ScopeKind::Globals:
+    return &dap.variables.globals;
+  case lldb_dap::ScopeKind::Registers:
+    return &dap.variables.registers;
   }
   return nullptr;
 }
@@ -2564,24 +2573,29 @@ void request_scopes(DAP &dap, const llvm::json::Object &request) {
 
   uint32_t frame_id = frame.GetFrameID();
 
-  if (dap.variables.added_frames.find(frame_id) ==
-      dap.variables.added_frames.end()) {
-    dap.variables.added_frames.insert(frame_id);
+  if (dap.variables.frames.find(frame_id) == dap.variables.frames.end()) {
 
-    dap.variables.locals.Append(frame.GetVariables(/*arguments=*/true,
-                                                   /*locals=*/true,
-                                                   /*statics=*/false,
-                                                   /*in_scope_only=*/true));
+    auto locals = frame.GetVariables(/*arguments=*/true,
+                                     /*locals=*/true,
+                                     /*statics=*/false,
+                                     /*in_scope_only=*/true);
 
-    dap.variables.globals.Append(frame.GetVariables(/*arguments=*/false,
-                                                    /*locals=*/false,
-                                                    /*statics=*/true,
-                                                    /*in_scope_only=*/true));
+    auto globals = frame.GetVariables(/*arguments=*/false,
+                                      /*locals=*/false,
+                                      /*statics=*/true,
+                                      /*in_scope_only=*/true);
 
-    dap.variables.registers.Append(frame.GetRegisters());
+    auto registers = frame.GetRegisters();
+
+    dap.variables.frames.insert(
+        std::make_pair(frame_id, std::make_tuple(locals, globals, registers)));
+
+    dap.variables.locals = locals;
+    dap.variables.globals = globals;
+    dap.variables.registers = registers;
   }
 
-  body.try_emplace("scopes", dap.CreateTopLevelScopes());
+  body.try_emplace("scopes", dap.CreateTopLevelScopes(frame_id));
   response.try_emplace("body", std::move(body));
   dap.SendJSON(llvm::json::Value(std::move(response)));
 }
