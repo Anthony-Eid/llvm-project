@@ -923,6 +923,7 @@ void Variables::Clear() {
   registers.Clear();
   referenced_variables.clear();
   frames.clear();
+  next_temporary_var_ref = VARREF_FIRST_VAR_IDX;
 }
 
 int64_t Variables::GetNewVariableReference(bool is_permanent) {
