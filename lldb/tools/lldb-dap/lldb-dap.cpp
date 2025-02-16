@@ -1593,6 +1593,7 @@ void request_completions(DAP &dap, const llvm::json::Object &request) {
   if (frame.IsValid()) {
     frame.GetThread().GetProcess().SetSelectedThread(frame.GetThread());
     frame.GetThread().SetSelectedFrame(frame.GetFrameID());
+    dap.variables.SwitchFrame(frame.GetFrameID());
   }
 
   std::string text = GetString(arguments, "text").str();
@@ -1818,6 +1819,7 @@ void request_evaluate(DAP &dap, const llvm::json::Object &request) {
     // focus_tid to the current frame for any thread related events.
     if (frame.IsValid()) {
       dap.focus_tid = frame.GetThread().GetThreadID();
+      dap.variables.SwitchFrame(frame.GetFrameID());
     }
     auto result = RunLLDBCommandsVerbatim(dap.debugger, llvm::StringRef(),
                                           {std::string(expression)});
@@ -4194,7 +4196,7 @@ void request_variables(DAP &dap, const llvm::json::Object &request) {
     int64_t start_idx = 0;
     int64_t num_children = 0;
 
-    if (dap.ScopeKind(variablesReference) == ScopeKind::Registers) {
+    if (dap.GetScopeKind(variablesReference) == ScopeKind::Registers) {
       // Change the default format of any pointer sized registers in the first
       // register set to be the lldb::eFormatAddressInfo so we show the pointer
       // and resolve what the pointer resolves to. Only change the format if the
@@ -4215,7 +4217,7 @@ void request_variables(DAP &dap, const llvm::json::Object &request) {
 
     num_children = top_scope->GetSize();
     if (num_children == 0 &&
-        dap.ScopeKind(variablesReference) == ScopeKind::Locals) {
+        dap.GetScopeKind(variablesReference) == ScopeKind::Locals) {
       // Check for an error in the SBValueList that might explain why we don't
       // have locals. If we have an error display it as the sole value in the
       // the locals.

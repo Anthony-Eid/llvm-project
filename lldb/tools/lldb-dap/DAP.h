@@ -276,7 +276,7 @@ struct DAP {
 
   void PopulateExceptionBreakpoints();
 
-  std::optional<ScopeKind> ScopeKind(const int64_t variablesReference);
+  std::optional<ScopeKind> GetScopeKind(const int64_t variablesReference);
 
   /// Attempt to determine if an expression is a variable expression or
   /// lldb command using a heuristic based on the first term of the

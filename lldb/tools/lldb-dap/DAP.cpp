@@ -151,7 +151,7 @@ void DAP::PopulateExceptionBreakpoints() {
   });
 }
 
-std::optional<ScopeKind> DAP::ScopeKind(const int64_t variablesReference) {
+std::optional<ScopeKind> DAP::GetScopeKind(const int64_t variablesReference) {
   auto iter = scope_kinds.find(variablesReference);
   if (iter != scope_kinds.end()) {
     return iter->second.first;
@@ -901,7 +901,7 @@ lldb::SBError DAP::WaitForProcessToStop(uint32_t seconds) {
   return error;
 }
 
-bool Variables::SwitchFrame(uint32_t frame_id) {
+bool Variables::SwitchFrame(const uint32_t frame_id) {
   auto iter = frames.find(frame_id);
 
   if (iter == frames.end()) {
