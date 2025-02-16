@@ -2589,11 +2589,9 @@ void request_scopes(DAP &dap, const llvm::json::Object &request) {
 
     dap.variables.frames.insert(
         std::make_pair(frame_id, std::make_tuple(locals, globals, registers)));
-
-    dap.variables.locals = locals;
-    dap.variables.globals = globals;
-    dap.variables.registers = registers;
   }
+
+  dap.variables.SwitchFrame(frame_id);
 
   body.try_emplace("scopes", dap.CreateTopLevelScopes(frame_id));
   response.try_emplace("body", std::move(body));

@@ -330,7 +330,10 @@ struct DAP {
   void RegisterRequestCallback(std::string request, RequestCallback callback);
 
   /// Debuggee will continue from stopped state.
-  void WillContinue() { variables.Clear(); }
+  void WillContinue() {
+    variables.Clear();
+    scope_kinds.clear();
+  }
 
   /// Poll the process to wait for it to reach the eStateStopped state.
   ///
