@@ -6,8 +6,13 @@
 //
 //===----------------------------------------------------------------------===//
 
+<<<<<<< HEAD
 #ifndef PROGRESS_EVENT_H
 #define PROGRESS_EVENT_H
+=======
+#ifndef LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
+#define LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
+>>>>>>> origin
 
 #include <atomic>
 #include <chrono>
@@ -15,8 +20,6 @@
 #include <optional>
 #include <queue>
 #include <thread>
-
-#include "DAPForward.h"
 
 #include "llvm/Support/JSON.h"
 
@@ -132,8 +135,12 @@ class ProgressEventReporter {
 public:
   /// \param[in] report_callback
   ///     Function to invoke to report the event to the IDE.
-  ProgressEventReporter(ProgressEventReportCallback report_callback);
+  explicit ProgressEventReporter(ProgressEventReportCallback report_callback);
 
+  ProgressEventReporter(const ProgressEventReporter &) = delete;
+  ProgressEventReporter(ProgressEventReporter &&) = delete;
+  ProgressEventReporter &operator=(const ProgressEventReporter &) = delete;
+  ProgressEventReporter &operator=(ProgressEventReporter &&) = delete;
   ~ProgressEventReporter();
 
   /// Add a new event to the internal queue and report the event if
@@ -160,4 +167,8 @@ private:
 
 } // namespace lldb_dap
 
+<<<<<<< HEAD
 #endif // PROGRESS_EVENT_H
+=======
+#endif // LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
+>>>>>>> origin

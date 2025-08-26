@@ -28,7 +28,6 @@
 #include "clang/Basic/Specifiers.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/StringRef.h"
-#include "llvm/Support/Casting.h"
 #include <algorithm>
 #include <cassert>
 #include <string>
@@ -84,13 +83,11 @@ static std::pair<StringRef, bool> classifyCapability(QualType QT) {
   // We need to look at the declaration of the type of the value to determine
   // which it is. The type should either be a record or a typedef, or a pointer
   // or reference thereof.
-  if (const auto *RT = QT->getAs<RecordType>()) {
-    if (const auto *RD = RT->getDecl())
-      return classifyCapability(*RD);
-  } else if (const auto *TT = QT->getAs<TypedefType>()) {
-    if (const auto *TD = TT->getDecl())
-      return classifyCapability(*TD);
-  } else if (QT->isPointerOrReferenceType())
+  if (const auto *RD = QT->getAsRecordDecl())
+    return classifyCapability(*RD);
+  if (const auto *TT = QT->getAs<TypedefType>())
+    return classifyCapability(*TT->getDecl());
+  if (QT->isPointerOrReferenceType())
     return classifyCapability(QT->getPointeeType());
 
   return ClassifyCapabilityFallback;

@@ -405,7 +405,7 @@ public:
 
   bool equals(const MCExpr &A, const MCExpr &B, CompFuncTy Comp) const;
 
-  virtual bool equals(const MCTargetExpr &A, const MCTargetExpr &B,
+  virtual bool equals(const MCSpecifierExpr &A, const MCSpecifierExpr &B,
                       CompFuncTy Comp) const;
 
   virtual bool isBranch(const MCInst &Inst) const {
@@ -428,6 +428,17 @@ public:
 
   virtual bool isIndirectBranch(const MCInst &Inst) const {
     return Analysis->isIndirectBranch(Inst);
+  }
+
+  /// Returns true if the instruction unconditionally transfers the control to
+  /// another program point, interrupting sequential code execution, e.g. by a
+  /// call, return, or unconditional jump. This explicitly leaves out
+  /// conditional branches as they may not be taken, but does allow transferring
+  /// the control to the next instruction (zero-displacement jump/call).
+  bool isUnconditionalControlTransfer(const MCInst &Inst) const {
+    const MCInstrDesc &Desc = Info->get(Inst.getOpcode());
+    // barrier captures returns and unconditional branches
+    return Desc.isBarrier() || Desc.isCall();
   }
 
   /// Returns true if the instruction is memory indirect call or jump
@@ -707,6 +718,20 @@ public:
     return false;
   }
 
+  /// Returns true if Inst is a trap instruction.
+  ///
+  /// Tests if Inst is an instruction that immediately causes an abnormal
+  /// program termination, for example when a security violation is detected
+  /// by a compiler-inserted check.
+  ///
+  /// @note An implementation of this method should likely return false for
+  /// calls to library functions like abort(), as it is possible that the
+  /// execution state is partially attacker-controlled at this point.
+  virtual bool isTrap(const MCInst &Inst) const {
+    llvm_unreachable("not implemented");
+    return false;
+  }
+
   virtual bool isBreakpoint(const MCInst &Inst) const {
     llvm_unreachable("not implemented");
     return false;
@@ -728,6 +753,10 @@ public:
     llvm_unreachable("not implemented");
     return false;
   }
+
+  /// Return true if the hlt instruction under the x86, otherwise, default to
+  /// false.
+  virtual bool isX86HLT(const MCInst &Inst) const { return false; }
 
   /// Return the width, in bytes, of the memory access performed by \p Inst, if
   /// this is a pop instruction. Return zero otherwise.
@@ -1393,7 +1422,7 @@ public:
       return getTargetSymbol(BinaryExpr->getLHS());
 
     auto *SymbolRefExpr = dyn_cast<const MCSymbolRefExpr>(Expr);
-    if (SymbolRefExpr && SymbolRefExpr->getKind() == MCSymbolRefExpr::VK_None)
+    if (SymbolRefExpr && SymbolRefExpr->getSpecifier() == 0)
       return &SymbolRefExpr->getSymbol();
 
     return nullptr;

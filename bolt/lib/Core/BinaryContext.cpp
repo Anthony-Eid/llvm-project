@@ -1032,10 +1032,8 @@ void BinaryContext::adjustCodePadding() {
 
     if (!hasValidCodePadding(BF)) {
       if (HasRelocations) {
-        if (opts::Verbosity >= 1) {
-          this->outs() << "BOLT-INFO: function " << BF
-                       << " has invalid padding. Ignoring the function.\n";
-        }
+        this->errs() << "BOLT-WARNING: function " << BF
+                     << " has invalid padding. Ignoring the function\n";
         BF.setIgnored();
       } else {
         BF.setMaxSize(BF.getSize());
@@ -2519,7 +2517,7 @@ BinaryContext::calculateEmittedSize(BinaryFunction &BF, bool FixBranches) {
   // Clean-up the effect of the code emission.
   for (const MCSymbol &Symbol : Assembler.symbols()) {
     MCSymbol *MutableSymbol = const_cast<MCSymbol *>(&Symbol);
-    MutableSymbol->setUndefined();
+    MutableSymbol->setFragment(nullptr);
     MutableSymbol->setIsRegistered(false);
   }
 
