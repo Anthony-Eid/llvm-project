@@ -20,11 +20,7 @@
 #ifndef LLDB_TOOLS_LLDB_DAP_PROTOCOL_PROTOCOL_TYPES_H
 #define LLDB_TOOLS_LLDB_DAP_PROTOCOL_PROTOCOL_TYPES_H
 
-<<<<<<< HEAD
-#include "Variables.h"
-=======
 #include "Protocol/DAPTypes.h"
->>>>>>> origin
 #include "lldb/lldb-defines.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/Support/JSON.h"

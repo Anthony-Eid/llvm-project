@@ -6,13 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-<<<<<<< HEAD
-#ifndef PROGRESS_EVENT_H
-#define PROGRESS_EVENT_H
-=======
 #ifndef LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
 #define LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
->>>>>>> origin
 
 #include <atomic>
 #include <chrono>
@@ -167,8 +162,4 @@ private:
 
 } // namespace lldb_dap
 
-<<<<<<< HEAD
-#endif // PROGRESS_EVENT_H
-=======
 #endif // LLDB_TOOLS_LLDB_DAP_PROGRESS_EVENT_H
->>>>>>> origin
